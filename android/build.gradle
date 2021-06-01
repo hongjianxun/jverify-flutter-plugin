@@ -3,6 +3,7 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     repositories {
+        mavenCentral()
         google()
         jcenter()
     }
@@ -14,6 +15,7 @@ buildscript {
 
 rootProject.allprojects {
     repositories {
+        mavenCentral()
         google()
         jcenter()
     }
@@ -27,18 +29,30 @@ android {
     defaultConfig {
         minSdkVersion 17
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
-
     }
+
     lintOptions {
         disable 'InvalidPackage'
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            useProguard true
+            // library 混淆 -> 随 library 引用，自动添加到 apk 打包混淆
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'consumer-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+            useProguard false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'consumer-rules.pro'
+        }
     }
 
 
 }
 
 dependencies {
-    compileOnly files('libs/flutter.jar')
-    implementation 'cn.jiguang.sdk:jverification:2.6.4'
-    implementation 'cn.jiguang.sdk:jcore:2.2.6'
+//    implementation fileTree(include: '*.aar', dir: 'libs')
+    implementation project(':jpush_flutter')
+    implementation 'cn.jiguang.sdk:jverification:2.7.2'
 }
