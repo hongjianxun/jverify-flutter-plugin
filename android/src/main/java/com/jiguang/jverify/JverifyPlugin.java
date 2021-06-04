@@ -19,6 +19,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,17 +34,17 @@ import cn.jiguang.verifysdk.api.LoginSettings;
 import cn.jiguang.verifysdk.api.PreLoginListener;
 import cn.jiguang.verifysdk.api.RequestCallback;
 import cn.jiguang.verifysdk.api.VerifyListener;
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 
 /**
  * JverifyPlugin
  */
-public class JverifyPlugin implements MethodCallHandler {
+public class JverifyPlugin implements FlutterPlugin, MethodCallHandler {
 
     // 定义日志 TAG
     private static final String TAG = "| JVER | Android | -";
@@ -66,17 +67,18 @@ public class JverifyPlugin implements MethodCallHandler {
     private Context context;
     private MethodChannel channel;
 
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "jverify");
-        channel.setMethodCallHandler(new JverifyPlugin(registrar, channel));
+
+    @Override
+    public void onAttachedToEngine(FlutterPluginBinding flutterPluginBinding) {
+        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "jverify");
+        channel.setMethodCallHandler(this);
+        context = flutterPluginBinding.getApplicationContext();
     }
 
-    private JverifyPlugin(Registrar registrar, MethodChannel channel) {
-        this.context = registrar.context();
-        this.channel = channel;
+
+    @Override
+    public void onDetachedFromEngine(FlutterPluginBinding binding) {
+        channel.setMethodCallHandler(null);
     }
 
 
@@ -125,7 +127,7 @@ public class JverifyPlugin implements MethodCallHandler {
 
     // 主线程再返回数据
     private void runMainThread(final Map<String, Object> map, final Result result, final String method) {
-        android.os.Handler handler = new Handler(Looper.getMainLooper());
+        Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -146,6 +148,12 @@ public class JverifyPlugin implements MethodCallHandler {
         Log.d(TAG, "Action - setup:");
 
         Object timeout = getValueByKey(call, "timeout");
+        boolean setControlWifiSwitch = (boolean) getValueByKey(call, "setControlWifiSwitch");
+        if (!setControlWifiSwitch) {
+            Log.d(TAG, "Action - setup: setControlWifiSwitch==" + false);
+            setControlWifiSwitch();
+        }
+
         JVerificationInterface.init(context, (Integer) timeout, new RequestCallback<String>() {
             @Override
             public void onResult(int code, String message) {
@@ -157,6 +165,18 @@ public class JverifyPlugin implements MethodCallHandler {
             }
         });
     }
+
+    private void setControlWifiSwitch() {
+        try {
+            Class<JVerificationInterface> aClass = JVerificationInterface.class;
+            Method method = aClass.getDeclaredMethod("setControlWifiSwitch", boolean.class);
+            method.setAccessible(true);
+            method.invoke(aClass, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * SDK设置debug模式
@@ -498,6 +518,10 @@ public class JverifyPlugin implements MethodCallHandler {
         Log.d(TAG, "layoutOriginOuthView:");
 
 
+        Object enterAnim = valueForKey(uiconfig, "enterAnim");
+        Object exitAnim = valueForKey(uiconfig, "exitAnim");
+        Object authBGGifPath = valueForKey(uiconfig, "authBGGifPath");
+
         Object authBackgroundImage = valueForKey(uiconfig, "authBackgroundImage");
 
         Object navColor = valueForKey(uiconfig, "navColor");
@@ -506,6 +530,7 @@ public class JverifyPlugin implements MethodCallHandler {
         Object navReturnImgPath = valueForKey(uiconfig, "navReturnImgPath");
         Object navHidden = valueForKey(uiconfig, "navHidden");
         Object navReturnBtnHidden = valueForKey(uiconfig, "navReturnBtnHidden");
+        Object navTransparent = valueForKey(uiconfig, "navTransparent");
 
         Object logoImgPath = valueForKey(uiconfig, "logoImgPath");
         Object logoWidth = valueForKey(uiconfig, "logoWidth");
@@ -635,6 +660,17 @@ public class JverifyPlugin implements MethodCallHandler {
             builder.setNeedCloseAnim((Boolean) needCloseAnim);
         }
 
+        int enterA;
+        int exitA;
+
+        if (enterAnim != null && exitAnim != null) {
+            enterA = ResourceUtil.getAnimId(context, (String) enterAnim);
+            exitA = ResourceUtil.getAnimId(context, (String) exitAnim);
+            if (enterA >= 0 && exitA >= 0) {
+                builder.overridePendingTransition(enterA, exitA);
+            }
+        }
+
         /************** 背景 ***************/
         if (authBackgroundImage != null) {
             int res_id = getResourceByReflect((String) authBackgroundImage);
@@ -642,12 +678,23 @@ public class JverifyPlugin implements MethodCallHandler {
                 builder.setAuthBGImgPath((String) authBackgroundImage);
             }
         }
+
+        if (authBGGifPath != null) {
+            int res_id = getResourceByReflect((String) authBGGifPath);
+            if (res_id > 0) {
+                builder.setAuthBGGifPath((String) authBGGifPath);
+            }
+        }
+
         /************** nav ***************/
         if (navHidden != null) {
             builder.setNavHidden((Boolean) navHidden);
         }
         if (navReturnBtnHidden != null) {
             builder.setNavReturnBtnHidden((Boolean) navReturnBtnHidden);
+        }
+        if (navTransparent != null) {
+            builder.setNavTransparent((Boolean) navTransparent);
         }
         if (navColor != null) {
             builder.setNavColor(exchangeObject(navColor));
@@ -852,7 +899,7 @@ public class JverifyPlugin implements MethodCallHandler {
             }
         }
 
-        builder.enableHintToast((Boolean)privacyHintToast, null);
+        builder.enableHintToast((Boolean) privacyHintToast, null);
         /************** 授权页弹窗模式 ***************/
         if (popViewConfig != null) {
             Map popViewConfigMap = (Map) popViewConfig;
@@ -1209,4 +1256,5 @@ public class JverifyPlugin implements MethodCallHandler {
         }
         return r_id;
     }
+
 }

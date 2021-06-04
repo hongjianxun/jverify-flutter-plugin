@@ -19,7 +19,7 @@ dependencies:
 
 ```
 dependencies:
-  jverify: 0.6.12
+  jverify: 2.1.2
 ```
 
 ### 配置

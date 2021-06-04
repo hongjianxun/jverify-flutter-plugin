@@ -1,5 +1,28 @@
-
-## 0.6.12
+## 2.1.2
++ 升级：升级 android 认证 2.7.2 jcore 2.8.2，ios 2.7.1
+## 2.1.0
++ 适配：适配 null safety
+## 2.0.7
++ 修复：修复android gradle 升级4.0 以上版本编译问题
+## 2.0.5
++ 新增：授权界面gif图片 authBGGifPath only android
++ 新增：授权界面动画 enterAnim  exitAnim  only android
++ 优化：升级认证版本 android 2.7.1，ios 2.7.0
+## 2.0.3
++ 新增：setup 方法新增 setControlWifiSwitch 参数，默认为true
+## 2.0.1
++ 新增：适配Flutter 2.0，flutter sdk 2.0以下版本请使用0.6.23。
+## 0.6.23
++ 新增：适配认证 ios  SDK 2.6.7。
+## 0.6.22
++ 新增：适配认证Android2.6.7 ios 2.6.6。
+## 0.6.20
++ 新增：添加iOS 授权界面弹出方式 modelTransitionStyle。
+## 0.6.18
++ 修复：修复ios needStartAnim needStartAnim 无效果的bug。
+## 0.6.16
++ 修复：修复ios 添加多个点击事件，响应的都是同一个。
+## 0.6.14
 + 优化：优化体验。
 ## 0.6.11
 + 优化：ios 在不选中认证协议的时候，设置是否显示toast提示。
